@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Misi Klasifikasi: Petualangan Dunia Kebutuhan dan Ekonomi</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#3B82F6', // Blue
+                        secondary: '#10B981', // Green
+                        accent: '#F59E0B', // Orange
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+                        'game': '0 4px 0px 0px rgba(0,0,0,0.2)',
+                        'game-active': '0 0px 0px 0px rgba(0,0,0,0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: none; /* Prevent scroll while dragging on mobile */
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pop-in {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .shake-error {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Game Buttons */
+        .btn-game {
+            transition: all 0.1s;
+            box-shadow: 0 6px 0px 0px rgba(0,0,0,0.15);
+        }
+        .btn-game:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0px 0px rgba(0,0,0,0.15);
+        }
+
+        /* Drag and Drop Styles */
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+            z-index: 50;
+            animation: pulse-border 2s infinite; /* Tambahan efek denyut untuk memancing klik/pilih */
+        }
+        
+        .draggable-item:active, .is-dragging {
+            cursor: grabbing;
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            z-index: 100;
+            animation: none; /* Matikan denyut saat diseret */
+        }
+
+        .drop-zone {
+            border: 3px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone-active {
+            border-color: #3B82F6;
+            background-color: #eff6ff;
+            transform: scale(1.02);
+            box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Object Image Wrapper */
+        .object-visual {
+            font-size: 5rem;
+            filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.1));
+            line-height: 1;
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="text-dark antialiased flex items-center justify-center p-4 lg:p-8">
+
+    <!-- Audio Effects (Using Web Audio API in JS to avoid external assets, handled programmatically) -->
+
+    <!-- ==================== WELCOME SCREEN ==================== -->
+    <div id="screen-welcome" class="w-full max-w-4xl bg-white rounded-3xl shadow-soft overflow-hidden flex flex-col md:flex-row pop-in relative z-10">
+        <div class="md:w-1/2 bg-gradient-to-br from-primary to-blue-700 p-8 md:p-12 flex flex-col justify-center items-center text-white text-center relative overflow-hidden">
+            <!-- Background Decoration -->
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <i class="fas fa-coins text-6xl absolute top-10 left-10"></i>
+                <i class="fas fa-shopping-cart text-6xl absolute bottom-10 right-10"></i>
+                <i class="fas fa-industry text-8xl absolute -bottom-4 -left-4"></i>
+            </div>
+            
+            <div class="animate-float mb-6 z-10">
+                <span class="text-7xl">🌍💼</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-4 leading-tight z-10 text-yellow-300 drop-shadow-md">
+                Misi Klasifikasi
+            </h1>
+            <h2 class="text-xl md:text-2xl font-semibold mb-2 z-10">
+                Petualangan Dunia Kebutuhan & Ekonomi
+            </h2>
+            <p class="text-blue-100 mt-4 z-10 text-sm md:text-base">
+                Tantang dirimu dalam misi membedakan berbagai jenis kebutuhan manusia dan kegiatan ekonomi!
+            </p>
+        </div>
+        <div class="md:w-1/2 p-8 md:p-12 flex flex-col justify-center items-center bg-white">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Siap Memulai Misi?</h3>
+            
+            <div class="w-full max-w-sm mb-6">
+                <label for="playerName" class="block text-sm font-semibold text-gray-600 mb-2">Masukkan Nama Agen (Siswa):</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user-astronaut text-gray-400"></i>
+                    </div>
+                    <input type="text" id="playerName" class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-blue-200 transition-all text-lg font-semibold" placeholder="Nama Panggilanmu..." autocomplete="off">
+                </div>
+                <p id="nameError" class="text-red-500 text-sm mt-2 hidden"><i class="fas fa-exclamation-circle"></i> Nama harus diisi dulu, Agen!</p>
+            </div>
+
+            <button onclick="startGame()" class="btn-game w-full max-w-sm bg-accent hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-xl text-xl uppercase tracking-wider flex items-center justify-center gap-2">
+                Mulai Petualangan <i class="fas fa-play"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== GAME SCREEN ==================== -->
+    <div id="screen-game" class="w-full max-w-5xl h-full md:h-[90vh] min-h-[600px] flex flex-col hidden relative z-10">
+        
+        <!-- Header -->
+        <header class="bg-white rounded-2xl shadow-sm p-4 mb-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-100 text-primary p-3 rounded-full">
+                    <i class="fas fa-user-astronaut text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Agen IPS</p>
+                    <p id="displayPlayerName" class="font-bold text-lg text-gray-800 truncate max-w-[150px] md:max-w-[200px]">Nama</p>
+                </div>
+            </div>
+
+            <div class="flex-1 min-w-[200px] max-w-md px-4">
+                <div class="flex justify-between text-sm font-bold text-gray-600 mb-1">
+                    <span id="levelTitle">Level 1</span>
+                    <span id="progressText">Soal 1/20</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div id="progressBar" class="bg-secondary h-3 rounded-full transition-all duration-500" style="width: 5%"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Skor</p>
+                    <p id="scoreDisplay" class="font-black text-2xl text-accent">0</p>
+                </div>
+                <div class="bg-yellow-100 text-accent p-3 rounded-xl">
+                    <i class="fas fa-star text-xl"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="flex-1 bg-white rounded-3xl shadow-soft p-4 md:p-8 flex flex-col relative overflow-hidden">
+            
+            <!-- Instructions -->
+            <div class="text-center mb-6 z-10">
+                <h3 class="text-lg md:text-xl font-bold text-gray-700 bg-blue-50 inline-block px-6 py-2 rounded-full border border-blue-100 shadow-sm">
+                    <i class="fas fa-hand-pointer text-primary mr-2 animate-bounce inline-block"></i> 
+                    Pilih, seret, dan lepas gambar di bawah ke kotak jawaban yang tepat!
+                </h3>
+            </div>
+
+            <!-- Draggable Area -->
+            <div class="flex-1 flex flex-col items-center justify-center relative z-20 min-h-[200px]" id="drag-container">
+                <div id="draggable-item" class="draggable-item bg-white border-4 border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center shadow-lg w-48 h-48 md:w-56 md:h-56 relative z-50 bg-gradient-to-b from-white to-gray-50">
+                    <div id="item-visual" class="object-visual mb-3">🍚</div>
+                    <div id="item-name" class="font-bold text-lg md:text-xl text-gray-800 text-center leading-tight">Beras</div>
+                </div>
+            </div>
+
+            <!-- Drop Zones -->
+            <div class="mt-8 grid grid-cols-2 gap-4 md:gap-8 w-full max-w-3xl mx-auto z-10">
+                <div id="drop-zone-1" class="drop-zone rounded-3xl p-6 md:p-8 flex flex-col items-center justify-center text-center bg-gray-50 h-32 md:h-40 cursor-pointer group">
+                    <span id="zone-1-text" class="text-xl md:text-2xl font-bold text-gray-600 group-hover:text-primary transition-colors">Primer</span>
+                </div>
+                <div id="drop-zone-2" class="drop-zone rounded-3xl p-6 md:p-8 flex flex-col items-center justify-center text-center bg-gray-50 h-32 md:h-40 cursor-pointer group">
+                    <span id="zone-2-text" class="text-xl md:text-2xl font-bold text-gray-600 group-hover:text-primary transition-colors">Sekunder</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ==================== FEEDBACK MODAL ==================== -->
+    <div id="feedback-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="feedback-card" class="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl transform scale-90 transition-transform duration-300">
+            <div id="feedback-icon" class="w-24 h-24 mx-auto rounded-full flex items-center justify-center text-5xl mb-6">
+                <!-- Icon inserted via JS -->
+            </div>
+            <h2 id="feedback-title" class="text-3xl font-black mb-2">Hebat!</h2>
+            <p id="feedback-desc" class="text-gray-600 text-lg mb-8 leading-relaxed">Penjelasan ada disini.</p>
+            
+            <button id="btn-next" class="btn-game w-full text-white font-bold py-4 px-8 rounded-xl text-xl uppercase tracking-wider">
+                Lanjut <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== RESULT SCREEN ==================== -->
+    <div id="screen-result" class="w-full max-w-3xl bg-white rounded-3xl shadow-soft overflow-hidden hidden flex-col pop-in relative z-10">
+        <div class="bg-gradient-to-r from-secondary to-green-600 p-8 text-center text-white relative">
+            <!-- Confetti Canvas overlay -->
+            <canvas id="confetti-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+            
+            <h2 class="text-3xl md:text-4xl font-black mb-2 relative z-10">Misi Selesai!</h2>
+            <p class="text-lg opacity-90 relative z-10">Laporan Akhir Agen <span id="finalPlayerName" class="font-bold text-yellow-300">Nama</span></p>
+        </div>
+        
+        <div class="p-8 md:p-12 bg-gray-50 flex flex-col items-center">
+            
+            <!-- Predicate Badge -->
+            <div class="relative -mt-16 mb-8 z-20">
+                <div class="w-32 h-32 bg-white rounded-full p-2 shadow-lg">
+                    <div id="predicate-badge" class="w-full h-full rounded-full flex items-center justify-center flex-col text-white shadow-inner">
+                        <span id="predicate-icon" class="text-4xl mb-1">🏆</span>
+                        <span id="predicate-text" class="font-bold text-sm text-center leading-tight">Sangat Hebat!</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
+                <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+                    <p class="text-gray-500 text-sm font-semibold">Total Skor</p>
+                    <p id="finalScore" class="text-4xl font-black text-primary">100</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100">
+                    <p class="text-gray-500 text-sm font-semibold">Keberhasilan</p>
+                    <p id="finalPercentage" class="text-4xl font-black text-secondary">100%</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 col-span-1">
+                    <p class="text-gray-500 text-sm font-semibold">Benar</p>
+                    <p id="finalCorrect" class="text-2xl font-bold text-green-500">10 <i class="fas fa-check-circle"></i></p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 col-span-1">
+                    <p class="text-gray-500 text-sm font-semibold">Salah</p>
+                    <p id="finalWrong" class="text-2xl font-bold text-red-500">0 <i class="fas fa-times-circle"></i></p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                <button onclick="resetGame()" class="btn-game flex-1 bg-primary hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+                    <i class="fas fa-redo"></i> Main Lagi
+                </button>
+                <button onclick="goHome()" class="btn-game flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+                    <i class="fas fa-home"></i> Halaman Awal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // --- 1. GAME DATA ---
+        const gameData = [
+            // LEVEL 1
+            {
+                level: 1,
+                levelName: "Level 1: Jenis Kebutuhan",
+                image: "🍚",
+                name: "Beras",
+                options: ["Primer", "Sekunder"],
+                answer: "Primer",
+                explanation: "Beras adalah kebutuhan pokok (primer) bagi sebagian besar masyarakat Indonesia untuk bertahan hidup."
+            },
+            {
+                level: 1,
+                levelName: "Level 1: Jenis Kebutuhan",
+                image: "📺",
+                name: "Televisi",
+                options: ["Primer", "Tersier"],
+                answer: "Tersier",
+                explanation: "Televisi termasuk kebutuhan tersier atau barang mewah karena bukan merupakan syarat utama untuk bertahan hidup."
+            },
+            {
+                level: 1,
+                levelName: "Level 1: Jenis Kebutuhan",
+                image: "🏎️",
+                name: "Mobil Mewah",
+                options: ["Sekunder", "Tersier"],
+                answer: "Tersier",
+                explanation: "Mobil mewah adalah barang prestise tinggi yang memenuhi kebutuhan tersier."
+            },
+            {
+                level: 1,
+                levelName: "Level 1: Jenis Kebutuhan",
+                image: "🏠",
+                name: "Rumah Tinggal",
+                options: ["Primer", "Tersier"],
+                answer: "Primer",
+                explanation: "Rumah (papan) adalah tempat berlindung yang merupakan kebutuhan pokok/primer manusia."
+            },
+            {
+                level: 1,
+                levelName: "Level 1: Jenis Kebutuhan",
+                image: "🚲",
+                name: "Sepeda",
+                options: ["Sekunder", "Tersier"],
+                answer: "Sekunder",
+                explanation: "Sepeda membantu aktivitas harian dan biasanya dipenuhi setelah kebutuhan primer tercukupi, sehingga termasuk sekunder."
+            },
+            // LEVEL 2
+            {
+                level: 2,
+                levelName: "Level 2: Sifat Kebutuhan",
+                image: "🥗",
+                name: "Makanan Bergizi",
+                options: ["Jasmani", "Rohani"],
+                answer: "Jasmani",
+                explanation: "Makanan bergizi diperlukan untuk memelihara fisik atau tubuh manusia (jasmani)."
+            },
+            {
+                level: 2,
+                levelName: "Level 2: Sifat Kebutuhan",
+                image: "🤲",
+                name: "Beribadah",
+                options: ["Jasmani", "Rohani"],
+                answer: "Rohani",
+                explanation: "Beribadah memberikan ketenangan jiwa dan pikiran, sehingga merupakan kebutuhan rohani."
+            },
+            {
+                level: 2,
+                levelName: "Level 2: Sifat Kebutuhan",
+                image: "🏃",
+                name: "Olahraga",
+                options: ["Jasmani", "Rohani"],
+                answer: "Jasmani",
+                explanation: "Olahraga secara langsung bertujuan menjaga kesehatan tubuh fisik (jasmani)."
+            },
+            {
+                level: 2,
+                levelName: "Level 2: Sifat Kebutuhan",
+                image: "🏖️",
+                name: "Rekreasi",
+                options: ["Jasmani", "Rohani"],
+                answer: "Rohani",
+                explanation: "Rekreasi atau liburan bertujuan menyegarkan pikiran dan menghilangkan stres (rohani)."
+            },
+            {
+                level: 2,
+                levelName: "Level 2: Sifat Kebutuhan",
+                image: "💊",
+                name: "Obat-obatan",
+                options: ["Jasmani", "Rohani"],
+                answer: "Jasmani",
+                explanation: "Obat-obatan digunakan untuk menyembuhkan penyakit pada tubuh fisik (jasmani)."
+            },
+            // LEVEL 3
+            {
+                level: 3,
+                levelName: "Level 3: Kegiatan Ekonomi",
+                image: "👨‍🌾",
+                name: "Petani Menanam Padi",
+                options: ["Produksi", "Konsumsi"],
+                answer: "Produksi",
+                explanation: "Menanam padi adalah kegiatan menghasilkan atau menambah nilai guna barang (produksi)."
+            },
+            {
+                level: 3,
+                levelName: "Level 3: Kegiatan Ekonomi",
+                image: "🏪",
+                name: "Pedagang di Pasar",
+                options: ["Distribusi", "Produksi"],
+                answer: "Distribusi",
+                explanation: "Pedagang menyalurkan barang dari produsen ke konsumen, yang disebut distribusi."
+            },
+            {
+                level: 3,
+                levelName: "Level 3: Kegiatan Ekonomi",
+                image: "🍽️",
+                name: "Siswa Makan Nasi",
+                options: ["Konsumsi", "Distribusi"],
+                answer: "Konsumsi",
+                explanation: "Makan adalah kegiatan menghabiskan atau mengurangi nilai guna barang (konsumsi)."
+            },
+            {
+                level: 3,
+                levelName: "Level 3: Kegiatan Ekonomi",
+                image: "🏭",
+                name: "Pabrik Sepatu",
+                options: ["Produksi", "Distribusi"],
+                answer: "Produksi",
+                explanation: "Pabrik mengolah bahan mentah menjadi barang jadi (sepatu), ini adalah produksi."
+            },
+            {
+                level: 3,
+                levelName: "Level 3: Kegiatan Ekonomi",
+                image: "🚚",
+                name: "Kurir Paket",
+                options: ["Distribusi", "Konsumsi"],
+                answer: "Distribusi",
+                explanation: "Kurir bertugas mengantarkan barang agar sampai ke tangan pembeli (distribusi)."
+            },
+            // LEVEL 4
+            {
+                level: 4,
+                levelName: "Level 4: Pelaku Ekonomi",
+                image: "🛒",
+                name: "Keluarga Belanja",
+                options: ["Rumah Tangga Konsumen", "Rumah Tangga Produsen"],
+                answer: "Rumah Tangga Konsumen",
+                explanation: "Keluarga (RTK) adalah pelaku ekonomi yang kegiatan utamanya mengkonsumsi barang/jasa."
+            },
+            {
+                level: 4,
+                levelName: "Level 4: Pelaku Ekonomi",
+                image: "🧵",
+                name: "Pabrik Pakaian",
+                options: ["Rumah Tangga Produsen", "Rumah Tangga Konsumen"],
+                answer: "Rumah Tangga Produsen",
+                explanation: "Pabrik (RTP) adalah pelaku yang menghasilkan barang atau jasa untuk dijual."
+            },
+            {
+                level: 4,
+                levelName: "Level 4: Pelaku Ekonomi",
+                image: "🛣️",
+                name: "Membangun Jalan",
+                options: ["Pemerintah", "Rumah Tangga Konsumen"],
+                answer: "Pemerintah",
+                explanation: "Pemerintah berperan menyediakan fasilitas publik seperti jalan raya untuk kesejahteraan rakyat."
+            },
+            {
+                level: 4,
+                levelName: "Level 4: Pelaku Ekonomi",
+                image: "🚢",
+                name: "Impor dari Jepang",
+                options: ["Masyarakat Luar Negeri", "Pemerintah"],
+                answer: "Masyarakat Luar Negeri",
+                explanation: "Kegiatan ekspor-impor melibatkan peran Masyarakat Luar Negeri sebagai pelaku ekonomi."
+            }
+        ];
+
+        // --- 2. STATE MANAGEMENT ---
+        let gameState = {
+            playerName: '',
+            currentIndex: 0,
+            score: 0,
+            correct: 0,
+            wrong: 0,
+            questions: [] // Will hold shuffled questions if needed, but we keep order by level
+        };
+
+        // --- 3. DOM ELEMENTS ---
+        const screens = {
+            welcome: document.getElementById('screen-welcome'),
+            game: document.getElementById('screen-game'),
+            result: document.getElementById('screen-result')
+        };
+        const inputName = document.getElementById('playerName');
+        const nameError = document.getElementById('nameError');
+        const draggableItem = document.getElementById('draggable-item');
+        const dropZones = [document.getElementById('drop-zone-1'), document.getElementById('drop-zone-2')];
+        
+        // --- 4. AUDIO SYNTHESIS (No external files) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'wrong') {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'pop') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        // --- 5. GAME LOGIC ---
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        }
+
+        function startGame() {
+            const name = inputName.value.trim();
+            if (!name) {
+                nameError.classList.remove('hidden');
+                inputName.classList.add('border-red-500');
+                inputName.focus();
+                return;
+            }
+            
+            nameError.classList.add('hidden');
+            inputName.classList.remove('border-red-500');
+            
+            gameState.playerName = name;
+            gameState.currentIndex = 0;
+            gameState.score = 0;
+            gameState.correct = 0;
+            gameState.wrong = 0;
+            gameState.questions = [...gameData]; // Copy data
+
+            document.getElementById('displayPlayerName').textContent = name;
+            
+            showScreen('game');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (gameState.currentIndex >= gameState.questions.length) {
+                showResult();
+                return;
+            }
+
+            const q = gameState.questions[gameState.currentIndex];
+            
+            // Update UI
+            document.getElementById('levelTitle').textContent = q.levelName;
+            document.getElementById('progressText').textContent = `Soal ${gameState.currentIndex + 1}/${gameState.questions.length}`;
+            document.getElementById('progressBar').style.width = `${((gameState.currentIndex) / gameState.questions.length) * 100}%`;
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+
+            // Set Draggable Item
+            document.getElementById('item-visual').textContent = q.image;
+            document.getElementById('item-name').textContent = q.name;
+            
+            // Reset Draggable Position
+            resetDraggablePosition();
+            draggableItem.style.pointerEvents = 'auto'; // Pastikan bisa ditarik kembali
+
+            // Set Drop Zones
+            document.getElementById('zone-1-text').textContent = q.options[0];
+            document.getElementById('zone-2-text').textContent = q.options[1];
+            
+            // Store target answer data in DOM for easy checking
+            dropZones[0].dataset.value = q.options[0];
+            dropZones[1].dataset.value = q.options[1];
+            
+            // Animation
+            draggableItem.classList.remove('pop-in');
+            void draggableItem.offsetWidth; // trigger reflow
+            draggableItem.classList.add('pop-in');
+        }
+
+        function checkAnswer(selectedOption) {
+            const q = gameState.questions[gameState.currentIndex];
+            const isCorrect = selectedOption === q.answer;
+
+            if (isCorrect) {
+                gameState.score += 10;
+                gameState.correct++;
+                playSound('correct');
+                showFeedbackModal(true, q.explanation);
+            } else {
+                gameState.wrong++;
+                playSound('wrong');
+                // Hapus animasi shake yang bertabrakan dengan transform, diganti snap back saat klik "Coba Lagi"
+                showFeedbackModal(false, "Coba perhatikan kembali gambar dan pahami jenis kebutuhan atau kegiatan ekonomi ini. " + q.explanation);
+            }
+            
+            // Update score immediately
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+        }
+
+        function showFeedbackModal(isCorrect, explanation) {
+            const modal = document.getElementById('feedback-modal');
+            const card = document.getElementById('feedback-card');
+            const iconContainer = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const desc = document.getElementById('feedback-desc');
+            const btn = document.getElementById('btn-next');
+
+            modal.classList.remove('hidden');
+            
+            // Allow layout to render before animating transform
+            setTimeout(() => {
+                card.classList.remove('scale-90');
+                card.classList.add('scale-100');
+            }, 10);
+
+            if (isCorrect) {
+                iconContainer.innerHTML = '<i class="fas fa-check"></i>';
+                iconContainer.className = "w-24 h-24 mx-auto rounded-full flex items-center justify-center text-5xl mb-6 bg-green-100 text-green-500 border-4 border-green-200";
+                title.textContent = "HEBAT!";
+                title.className = "text-3xl font-black mb-2 text-green-600";
+                btn.className = "btn-game w-full text-white font-bold py-4 px-8 rounded-xl text-xl uppercase tracking-wider bg-green-500 hover:bg-green-600";
+                btn.innerHTML = 'Lanjut <i class="fas fa-arrow-right ml-2"></i>';
+            } else {
+                iconContainer.innerHTML = '<i class="fas fa-times"></i>';
+                iconContainer.className = "w-24 h-24 mx-auto rounded-full flex items-center justify-center text-5xl mb-6 bg-red-100 text-red-500 border-4 border-red-200";
+                title.textContent = "BELUM TEPAT!";
+                title.className = "text-3xl font-black mb-2 text-red-500";
+                btn.className = "btn-game w-full text-white font-bold py-4 px-8 rounded-xl text-xl uppercase tracking-wider bg-red-500 hover:bg-red-600";
+                btn.innerHTML = 'Coba Lagi <i class="fas fa-redo ml-2"></i>';
+            }
+
+            desc.textContent = explanation;
+
+            btn.onclick = () => {
+                card.classList.remove('scale-100');
+                card.classList.add('scale-90');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    if (isCorrect) {
+                        gameState.currentIndex++;
+                        loadQuestion();
+                    } else {
+                        // Jika salah, kembalikan ke tengah dan izinkan tarik lagi
+                        resetDraggablePosition();
+                        draggableItem.style.pointerEvents = 'auto';
+                    }
+                }, 300);
+            };
+        }
+
+        function showResult() {
+            showScreen('result');
+            
+            const totalQ = gameState.questions.length;
+            const percentage = Math.round((gameState.correct / totalQ) * 100);
+            
+            document.getElementById('finalPlayerName').textContent = gameState.playerName;
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalPercentage').textContent = `${percentage}%`;
+            document.getElementById('finalCorrect').innerHTML = `${gameState.correct} <i class="fas fa-check-circle"></i>`;
+            document.getElementById('finalWrong').innerHTML = `${gameState.wrong} <i class="fas fa-times-circle"></i>`;
+
+            // Predicate Logic
+            const badge = document.getElementById('predicate-badge');
+            const pText = document.getElementById('predicate-text');
+            const pIcon = document.getElementById('predicate-icon');
+
+            let config = {};
+            if (percentage >= 90) {
+                config = { text: "Sangat Hebat!", color: "from-yellow-400 to-orange-500", icon: "🏆" };
+            } else if (percentage >= 80) {
+                config = { text: "Hebat!", color: "from-blue-400 to-primary", icon: "🌟" };
+            } else if (percentage >= 70) {
+                config = { text: "Bagus!", color: "from-green-400 to-secondary", icon: "👍" };
+            } else if (percentage >= 60) {
+                config = { text: "Terus Berlatih!", color: "from-purple-400 to-purple-600", icon: "💪" };
+            } else {
+                config = { text: "Jangan Menyerah!", color: "from-gray-400 to-gray-600", icon: "🔥" };
+            }
+
+            badge.className = `w-full h-full rounded-full flex items-center justify-center flex-col text-white shadow-inner bg-gradient-to-br ${config.color}`;
+            pText.textContent = config.text;
+            pIcon.textContent = config.icon;
+
+            if(percentage >= 70) triggerConfetti();
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        function goHome() {
+            inputName.value = '';
+            showScreen('welcome');
+        }
+
+        // --- 6. CUSTOM DRAG AND DROP IMPLEMENTATION (Mouse + Touch) ---
+        
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+        let currentTranslateX = 0, currentTranslateY = 0;
+        let currentDropZone = null;
+
+        draggableItem.addEventListener('mousedown', dragStart);
+        draggableItem.addEventListener('touchstart', dragStart, {passive: false});
+        
+        // Use document for move/end to catch events outside the element
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag, {passive: false});
+        
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchend', dragEnd);
+
+        function dragStart(e) {
+            // Only allow left click for mouse
+            if(e.type === 'mousedown' && e.button !== 0) return;
+            if (document.getElementById('feedback-modal').classList.contains('hidden') === false) return; // Prevent drag if modal open
+
+            playSound('pop');
+            isDragging = true;
+            draggableItem.classList.add('is-dragging');
+            
+            // Reset translate tracking on new drag start
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            
+            draggableItem.style.transform = `translate(0px, 0px) scale(1.05)`;
+            
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            } else {
+                startX = e.clientX;
+                startY = e.clientY;
+                e.preventDefault(); // Prevent text selection on mouse down
+            }
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault(); // Prevent scrolling on touch devices
+
+            let clientX, clientY;
+            if (e.type === 'touchmove') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+            
+            currentTranslateX = deltaX;
+            currentTranslateY = deltaY;
+
+            draggableItem.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`;
+
+            // Collision detection
+            checkDropZoneCollision(clientX, clientY);
+        }
+
+        function checkDropZoneCollision(x, y) {
+            let foundZone = null;
+            
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                // Simple bounding box check
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    foundZone = zone;
+                }
+            });
+
+            // Update UI
+            if (currentDropZone && currentDropZone !== foundZone) {
+                currentDropZone.classList.remove('drop-zone-active');
+            }
+            if (foundZone && foundZone !== currentDropZone) {
+                foundZone.classList.add('drop-zone-active');
+                playSound('pop'); // Little tick sound on hover
+            }
+            currentDropZone = foundZone;
+        }
+
+        function dragEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            draggableItem.classList.remove('is-dragging');
+
+            if (currentDropZone) {
+                const selectedValue = currentDropZone.dataset.value;
+                const savedDropZone = currentDropZone; // Save reference
+                currentDropZone.classList.remove('drop-zone-active');
+                currentDropZone = null;
+                
+                // Animate dropping into the center of the zone
+                const dropRect = savedDropZone.getBoundingClientRect();
+                const itemRect = draggableItem.getBoundingClientRect();
+                
+                const dropCenterX = dropRect.left + dropRect.width / 2;
+                const dropCenterY = dropRect.top + dropRect.height / 2;
+                const itemCenterX = itemRect.left + itemRect.width / 2;
+                const itemCenterY = itemRect.top + itemRect.height / 2;
+                
+                const finalX = currentTranslateX + (dropCenterX - itemCenterX);
+                const finalY = currentTranslateY + (dropCenterY - itemCenterY);
+                
+                draggableItem.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                // Skala gambar dikecilkan agar seolah "masuk" ke dalam kotak dengan rapi
+                draggableItem.style.transform = `translate(${finalX}px, ${finalY}px) scale(0.6)`;
+                draggableItem.style.pointerEvents = 'none'; // Cegah ditarik ulang saat memverifikasi
+                
+                setTimeout(() => {
+                    checkAnswer(selectedValue);
+                }, 300);
+            } else {
+                // Snap back
+                resetDraggablePosition();
+            }
+        }
+
+        function resetDraggablePosition() {
+            draggableItem.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            draggableItem.style.transform = 'translate(0px, 0px) scale(1)';
+            
+            // Remove transition after it's done so it doesn't affect dragging
+            setTimeout(() => {
+                if(!isDragging) draggableItem.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease';
+            }, 300);
+        }
+
+
+        // --- 7. SIMPLE CONFETTI EFFECT ---
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#eab308'];
+
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 4 - 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 10 - 5
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotationSpeed;
+
+                    if (p.y < canvas.height) active = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (active) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0,0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        // Initialize: Allow enter key on input
+        inputName.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+
+    </script>
+</body>
+</html>
